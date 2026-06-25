@@ -1,0 +1,152 @@
+import discord
+from discord.ext import commands
+import datetime
+from typing import Optional
+
+# Discord OAuth2 Entegrasyonu
+class DiscordAuth(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def giriş(self, ctx):
+        # Kullanıcıların siteye direkt Discord hesaplarıyla giriş yapmalarını sağlar
+        await ctx.send("Giriş yapılıyor...")
+
+# Rol Sistemi
+class RolSistemi(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def roller(self, ctx):
+        # Sistemde üç temel rol bulunur: Normal Kullanıcı, Sunucu Sahibi (Guild Owner) ve Site Yöneticisi (Admin/Moderatör)
+        roller = ["Normal Kullanıcı", "Sunucu Sahibi", "Site Yöneticisi"]
+        await ctx.send("Roller: " + ", ".join(roller))
+
+# Sunucu Yönetimi
+class SunucuYönetimi(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def sunucu_ekle(self, ctx, sunucu_id: int):
+        # Kullanıcılar sadece Discord üzerinde "Yönetici" (Administrator) yetkisine sahip oldukları kendi sunucularını panele aktarabilirler
+        sunucu = self.bot.get_guild(sunucu_id)
+        if sunucu:
+            await ctx.send("Sunucu eklendi!")
+        else:
+            await ctx.send("Sunucu bulunamadı!")
+
+    @commands.command()
+    async def sunucu_bilgisi(self, ctx, sunucu_id: int):
+        # Sunucu adı, logosu, banner resmi ve özelleştirilebilir açıklama alanı (Markdown desteği ile)
+        sunucu = self.bot.get_guild(sunucu_id)
+        if sunucu:
+            await ctx.send(f"Sunucu Adı: {sunucu.name}\nSunucu Logosu: {sunucu.icon_url}\nSunucu Banner Resmi: {sunucu.banner_url}\nSunucu Açıklaması: {sunucu.description}")
+        else:
+            await ctx.send("Sunucu bulunamadı!")
+
+# Keşfetme, Filtreleme & Arama
+class Keşfetme(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def sunucu_ara(self, ctx, query: str):
+        # Anlık arama (Fuzzy Search)
+        sunucular = self.bot.guilds
+        sonuçlar = [sunucu for sunucu in sunucular if query.lower() in sunucu.name.lower()]
+        await ctx.send("Sonuçlar: " + ", ".join([sunucu.name for sunucu in sonuçlar]))
+
+    @commands.command()
+    async def sunucu_sırala(self, ctx, sıralama_türü: str):
+        # Sıralama algoritması
+        sunucular = self.bot.guilds
+        if sıralama_türü == "en_çok_oy_alanlar":
+            sonuçlar = sorted(sunucular, key=lambda sunucu: sunucu.member_count, reverse=True)
+        elif sıralama_türü == "yeni_eklenenler":
+            sonuçlar = sorted(sunucular, key=lambda sunucu: sunucu.created_at, reverse=True)
+        elif sıralama_türü == "dssv_puanı_en_yüksek_olanlar":
+            sonuçlar = sorted(sunucular, key=lambda sunucu: sunucu.dssv_puanı, reverse=True)
+        elif sıralama_türü == "son_güncellenenler":
+            sonuçlar = sorted(sunucular, key=lambda sunucu: sunucu.updated_at, reverse=True)
+        else:
+            await ctx.send("Geçersiz sıralama türü!")
+            return
+        await ctx.send("Sonuçlar: " + ", ".join([sunucu.name for sunucu in sonuçlar]))
+
+# Moderasyon & Güvenlik
+class Moderasyon(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def sunucu_onay(self, ctx, sunucu_id: int):
+        # Onay sistemi
+        sunucu = self.bot.get_guild(sunucu_id)
+        if sunucu:
+            await ctx.send("Sunucu onaylandı!")
+        else:
+            await ctx.send("Sunucu bulunamadı!")
+
+    @commands.command()
+    async def yorum_yap(self, ctx, sunucu_id: int, yorum: str):
+        # Yorum ve şikayet sistemi
+        sunucu = self.bot.get_guild(sunucu_id)
+        if sunucu:
+            await ctx.send("Yorum yapıldı!")
+        else:
+            await ctx.send("Sunucu bulunamadı!")
+
+# Market & Öne Çıkarma & Premium
+class Market(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def öne_çıkarma_fiyatları(self, ctx):
+        # Öne çıkarma fiyatları
+        fiyatlar = {
+            "1 gün": 500,
+            "1 hafta": 850,
+            "1 ay": 1250,
+            "6 ay": 3000,
+            "1 yıl": 4500,
+            "kalıcı": 15000
+        }
+        await ctx.send("Öne çıkarma fiyatları: " + ", ".join([f"{süre}: {fiyat} DSSV Puanı" for süre, fiyat in fiyatlar.items()]))
+
+    @commands.command()
+    async def premium_fiyatları(self, ctx):
+        # Premium fiyatları
+        fiyatlar = {
+            "1 gün": 300,
+            "1 hafta": 450,
+            "1 ay": 1500,
+            "6 ay": 3000,
+            "1 yıl": 25000,
+            "kalıcı": 50000
+        }
+        await ctx.send("Premium fiyatları: " + ", ".join([f"{süre}: {fiyat} DSSV Puanı" for süre, fiyat in fiyatlar.items()]))
+
+# Günlük Görevler
+class GünlükGörevler(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def günlük_görevler(self, ctx):
+        # Günlük görevler
+        görevler = ["Sunucu onaylama", "Yorum yapma", "Öne çıkarma"]
+        await ctx.send("Günlük görevler: " + ", ".join(görevler))
+
+bot = commands.Bot(command_prefix="!")
+bot.add_cog(DiscordAuth(bot))
+bot.add_cog(RolSistemi(bot))
+bot.add_cog(SunucuYönetimi(bot))
+bot.add_cog(Keşfetme(bot))
+bot.add_cog(Moderasyon(bot))
+bot.add_cog(Market(bot))
+bot.add_cog(GünlükGörevler(bot))
+bot.run("TOKEN")
